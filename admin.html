@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>لوحة المسجلين | سديم</title>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=IBM+Plex+Sans+Arabic:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#07040f;--tx:#f2eeff;--mut:#a79fc4;--ac:#9b7bff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(60% 50% at 80% 0,#2a1560,transparent),var(--bg);color:var(--tx);font-family:'IBM Plex Sans Arabic',Tahoma,sans-serif;min-height:100vh;padding:24px 16px}
+.w{max-width:960px;margin:0 auto}h1{font-family:'Lalezar',Tahoma,sans-serif;font-size:44px;margin:0 0 4px}
+.m{color:var(--mut);margin:0 0 20px}input,button{font:inherit;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.4);color:var(--tx);padding:11px 14px}
+button{cursor:pointer;background:var(--ac);color:#0a0618;font-weight:600;border:0}button.g{background:rgba(255,255,255,.1);color:var(--tx)}
+.r{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.r input{flex:1;min-width:180px}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.k div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 14px}.k b{display:block;font-size:26px}.k span{color:var(--mut);font-size:13px}
+.t{overflow-x:auto;border-radius:14px;border:1px solid rgba(255,255,255,.1)}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:10px 12px;text-align:start;border-bottom:1px solid rgba(255,255,255,.07);white-space:nowrap}th{color:var(--mut);background:rgba(255,255,255,.05)}
+#e{color:#ff8a8a;min-height:22px}:focus-visible{outline:2px solid #fff;outline-offset:2px}
+</style></head><body><div class="w">
+<h1>لوحة المسجلين</h1><p class="m" id="st">أدخلي المفتاح السري لعرض القائمة.</p>
+<div class="r"><input id="k" type="password" placeholder="المفتاح السري" autocomplete="off"><button id="go">عرض</button></div><div id="e" role="alert"></div>
+<div id="v" hidden><div class="k" id="kp"></div>
+<div class="r"><input id="q" placeholder="بحث بالاسم أو التخصص أو الكلية"><button class="g" id="cs">تحميل CSV</button></div>
+<div class="t"><table><thead><tr><th>#</th><th>الوقت</th><th>الاسم</th><th>التخصص</th><th>الكلية</th></tr></thead><tbody id="tb"></tbody></table></div></div></div>
+<script>
+const SHEET_URL=''; /* نفس رابط الـ Web app المستخدم في index.html */
+const $=s=>document.querySelector(s);let R=[],tm;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+async function load(){const k=$('#k').value.trim();if(!SHEET_URL)return $('#e').textContent='ضعي رابط الـ Web app في SHEET_URL داخل هذا الملف.';if(!k)return;
+try{const d=await (await fetch(SHEET_URL+'?key='+encodeURIComponent(k))).json();if(d.error)throw 0;R=d.rows.reverse();$('#e').textContent='';$('#v').hidden=false;sessionStorage.setItem('k',k);draw();clearTimeout(tm);tm=setTimeout(load,15000)}catch(x){$('#e').textContent='تعذر التحميل. تأكدي من المفتاح ومن رابط الـ Web app.'}}
+function draw(){const q=$('#q').value.trim().toLowerCase();const f=R.filter(r=>!q||r.join(' ').toLowerCase().includes(q));
+const by={};R.forEach(r=>by[r[3]]=(by[r[3]]||0)+1);const top=Object.entries(by).sort((a,b)=>b[1]-a[1])[0];
+const today=R.filter(r=>new Date(r[0]).toDateString()==new Date().toDateString()).length;
+$('#kp').innerHTML=`<div><b>${R.length}</b><span>إجمالي المسجلين</span></div><div><b>${today}</b><span>اليوم</span></div><div><b>${top?esc(top[1]):0}</b><span>${top?esc(top[0]):'-'}</span></div>`;
+$('#st').textContent='يتحدّث تلقائيًا كل 15 ثانية.';
+$('#tb').innerHTML=f.map((r,i)=>`<tr><td>${R.length-R.indexOf(r)}</td><td>${esc(new Date(r[0]).toLocaleString('ar'))}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td></tr>`).join('')}
+$('#go').onclick=load;$('#k').onkeydown=e=>e.key=='Enter'&&load();$('#q').oninput=draw;
+$('#cs').onclick=()=>{const c=[['Time','Name','Major','College AR','College EN','Lang'],...R].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv'}));a.download='sadeem-registrations.csv';a.click()};
+const sk=sessionStorage.getItem('k');if(sk){$('#k').value=sk;load()}
+</script></body></html>
